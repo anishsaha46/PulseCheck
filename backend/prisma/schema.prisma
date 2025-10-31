@@ -25,3 +25,21 @@ model User {
   alerts Alert[]
 }
 
+model Monitor{
+  id String @id @default(cuid())
+  url String
+  method String @default("GET")
+  name String
+  status String @default("active")
+  interval Int @default(60)
+  timeout Int @default(10)
+  userId String
+  user User @relation(fields:[userId],references: [id],onDelete:Cascade)
+  checks Check[]
+  alerts Alert[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
