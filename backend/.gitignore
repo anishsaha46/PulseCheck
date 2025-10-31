@@ -1,0 +1,44 @@
+# Node modules folder
+/node_modules/
+
+# TypeScript build output
+/dist/
+/build/
+
+# Environment variables file
+.env
+
+# Prisma related
+/prisma/.env
+/prisma/migrations/
+
+# Logs and temporary files
+*.log
+*.log.*
+
+# OS-specific files (macOS, Windows)
+.DS_Store
+Thumbs.db
+
+# npm package lock file (optional if you want to lock dependencies)
+# package-lock.json (or yarn.lock) can be included if desired
+
+# IDE/Editor files
+.vscode/
+.idea/
+
+# TypeScript compiler output
+*.tsbuildinfo
+
+# Debugger configuration files
+.vscode/
+*.launch.json
+
+# Optional: If you're using Docker
+docker-compose.yml
+Dockerfile
+
+# Optional: If using testing tools
+coverage/
+
+/generated/prisma
