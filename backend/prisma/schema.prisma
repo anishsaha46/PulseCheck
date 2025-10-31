@@ -43,3 +43,17 @@ model Monitor{
   @@index([userId])
 }
 
+model Check {
+  id         String   @id @default(cuid())
+  monitorId  String
+  monitor    Monitor  @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  status     String   // "up" or "down"
+  statusCode Int?
+  responseTime Int    // milliseconds
+  error      String?
+  createdAt  DateTime @default(now())
+
+  @@index([monitorId])
+  @@index([createdAt])
+}
+
