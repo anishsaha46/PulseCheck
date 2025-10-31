@@ -57,3 +57,18 @@ model Check {
   @@index([createdAt])
 }
 
+model Alert {
+  id        String   @id @default(cuid())
+  monitorId String
+  monitor   Monitor  @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // "email", "webhook", "sms"
+  recipient String   // email address, webhook URL, or phone number
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([monitorId])
+  @@index([userId])
+}
