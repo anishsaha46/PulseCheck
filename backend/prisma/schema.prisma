@@ -90,17 +90,26 @@ model Monitor {
 }
 
 model Check {
-  id         String   @id @default(cuid())
-  monitorId  String
-  monitor    Monitor  @relation(fields: [monitorId], references: [id], onDelete: Cascade)
-  status     String   // "up" or "down"
-  statusCode Int?
-  responseTime Int    // milliseconds
-  error      String?
-  createdAt  DateTime @default(now())
+  id            String   @id @default(cuid())
+  monitorId     String
+  monitor       Monitor  @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  
+  statusCode    Int?     
+  latencyMs     Int      // Response time in milliseconds
+  responseSizeBytes Int? // Response body size
+  responseHeaders Json?  // Captured response headers
+  
+  status        String   // "up", "down", "timeout", "error"
+  error         String?  
+  
+  startAt       DateTime @default(now())
+  endAt         DateTime @default(now())
+  
+  createdAt     DateTime @default(now())
 
   @@index([monitorId])
   @@index([createdAt])
+  @@index([status])
 }
 
 model Alert {
