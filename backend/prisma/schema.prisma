@@ -112,6 +112,29 @@ model Check {
   @@index([status])
 }
 
+model Incident {
+  id            String   @id @default(cuid())
+  monitorId     String
+  monitor       Monitor  @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  
+  status        String   @default("open")   // open, resolved, acknowledged
+  failureCount  Int      @default(1)
+  successCount  Int      @default(0)
+  
+  startAt       DateTime @default(now())
+  endAt         DateTime?  // When resolved
+  acknowledgedAt DateTime?
+  
+  rootCause     String?  // Description of issue
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([monitorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
 model Alert {
   id        String   @id @default(cuid())
   monitorId String
