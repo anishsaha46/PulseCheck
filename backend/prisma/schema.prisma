@@ -176,3 +176,20 @@ model Alert {
   @@index([userId])
   @@index([monitorId])
 }
+
+model AlertDelivery {
+  id            String   @id @default(cuid())
+  alertId       String   // Reference to Alert (not FK to prevent cascade issues)
+  
+  status        String   // "delivered", "failed", "bounced"
+  statusCode    Int?     // HTTP status for webhooks
+  error         String?  
+  
+  sentAt        DateTime @default(now())
+  retryCount    Int      @default(0)
+  nextRetryAt   DateTime?
+
+  @@index([alertId])
+  @@index([sentAt])
+  @@index([status])
+}
