@@ -13,3 +13,5 @@ router.post("/",(req:Request,res:Response)=>alertController.createAlert(req,res)
 router.put("/:id",(req:Request,res:Response)=>alertController.updateAlert(req,res))
 
 router.delete("/:id",(req:Request,res:Response)=>alertController.deleteAlert(req,res))
+
+export default router
