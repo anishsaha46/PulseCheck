@@ -36,6 +36,26 @@ model User {
   @@index([verified])
 }
 
+model Subscription {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  planName      String   @default("free") // free, pro, enterprise
+  maxMonitors   Int      @default(5)
+  maxAlerts     Int      @default(10)
+  retentionDays Int      @default(7)
+  
+  status        String   @default("active") // active, canceled, expired
+  trialsRemaining Int    @default(1)
+  
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime?
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
 model Monitor{
   id String @id @default(cuid())
   url String
