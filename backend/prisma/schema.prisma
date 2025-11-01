@@ -112,6 +112,20 @@ model Check {
   @@index([status])
 }
 
+model IncidentHistory {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  incidentType  String   // "incident_created", "incident_resolved", "threshold_breached"
+
+  message       String
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
 model Incident {
   id            String   @id @default(cuid())
   monitorId     String
