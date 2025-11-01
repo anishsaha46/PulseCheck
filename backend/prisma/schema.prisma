@@ -150,17 +150,29 @@ model Incident {
 }
 
 model Alert {
-  id        String   @id @default(cuid())
-  monitorId String
-  monitor   Monitor  @relation(fields: [monitorId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String   // "email", "webhook", "sms"
-  recipient String   // email address, webhook URL, or phone number
-  enabled   Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  monitorId     String
+  monitor       Monitor  @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  
+  // Alert configuration
+  type          String   // "email", "webhook"
+  channel       String   // Email address or webhook URL
+  threshold     Int      @default(3)   // Consecutive failures before alert
+  recoveryCount Int      @default(2)   // Consecutive successes to resolve
+  
+  isEnabled     Boolean  @default(true)
+  
+  // Alert delivery tracking
+  lastSentAt    DateTime?
+  lastStatus    String?  // "sent", "failed", "pending"
+  consecutiveFails Int    @default(0)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  @@index([monitorId])
+  @@unique([userId, monitorId, channel]) // Prevent duplicate alerts
   @@index([userId])
+  @@index([monitorId])
 }
