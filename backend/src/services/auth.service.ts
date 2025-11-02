@@ -80,4 +80,34 @@ export const authService = {
       token,
     }
   },
+
+  async getProfile(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        subscription: true,
+        _count: {
+          select: { monitors: { where: { isDeleted: false } }, alerts: true },
+        },
+      },
+    })
+
+    if (!user) {
+      throw new Error("User not found")
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      verified: user.verified,
+      subscription: user.subscription,
+      stats: {
+        monitorCount: user._count.monitors,
+        alertCount: user._count.alerts,
+      },
+    }
+  },
+
+  
 }
