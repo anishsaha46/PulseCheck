@@ -1,6 +1,9 @@
 import bcrypt from "bcryptjs"
 import { generateToken } from "../config/auth"
 import prisma from "../config/database"
+import { logger } from "../utils/logger"
+import { config } from "../config/env"
+
 
 export const authService = {
   async register(data: { email: string; password: string; name: string }) {
@@ -9,7 +12,8 @@ export const authService = {
     })
 
     if (existingUser) {
-      throw new Error("User already exists")
+      logger.warn("Registration attempt for existing email", { email: data.email })
+      throw new Error("Email already registered")
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10)
@@ -18,14 +22,30 @@ export const authService = {
       data: {
         email: data.email,
         name: data.name,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
+        verified: config.NODE_ENV !== "production", // Auto-verify in dev
+        subscription: {
+          create: {
+            planName: "free",
+            maxMonitors: 5,
+            maxAlerts: 10,
+            retentionDays: 7,
+          },
+        },
       },
+      include: { subscription: true },
     })
 
     const token = generateToken(user.id)
+    logger.info("User registered successfully", { userId: user.id, email: user.email })
 
     return {
-      user: { id: user.id, email: user.email, name: user.name },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        verified: user.verified,
+      },
       token,
     }
   },
