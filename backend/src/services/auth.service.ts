@@ -50,25 +50,33 @@ export const authService = {
     }
   },
 
-  async login(data: { email: string; password: string }) {
+    async login(data: { email: string; password: string }) {
     const user = await prisma.user.findUnique({
       where: { email: data.email },
     })
 
     if (!user) {
+      logger.warn("Login attempt for non-existent user", { email: data.email })
       throw new Error("Invalid credentials")
     }
 
-    const passwordMatch = await bcrypt.compare(data.password, user.password)
+    const passwordMatch = await bcrypt.compare(data.password, user.passwordHash)
 
     if (!passwordMatch) {
+      logger.warn("Failed login attempt", { userId: user.id })
       throw new Error("Invalid credentials")
     }
 
     const token = generateToken(user.id)
+    logger.info("User logged in successfully", { userId: user.id })
 
     return {
-      user: { id: user.id, email: user.email, name: user.name },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        verified: user.verified,
+      },
       token,
     }
   },
