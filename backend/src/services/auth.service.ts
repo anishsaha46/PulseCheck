@@ -109,5 +109,23 @@ export const authService = {
     }
   },
 
-  
+  async updateProfile(userId: string, data: { name?: string; email?: string }) {
+    if (data.email) {
+      const existing = await prisma.user.findUnique({
+        where: { email: data.email },
+      })
+      if (existing && existing.id !== userId) {
+        throw new Error("Email already in use")
+      }
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data,
+    })
+
+    logger.info("User profile updated", { userId })
+    return user
+  },
+
 }
