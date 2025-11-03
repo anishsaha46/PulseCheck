@@ -71,8 +71,20 @@ export const incidentService={
       take: pagination.take,
       orderBy: { createdAt: "desc" },
     })
-
     return incidents
   },
-  
+
+    async getMonitorIncidents(monitorId: string, userId: string) {
+    const monitor = await prisma.monitor.findFirst({
+      where: { id: monitorId, userId },
+    })
+
+    if (!monitor) throw new Error("Monitor not found")
+
+    return await prisma.incident.findMany({
+      where: { monitorId },
+      orderBy: { createdAt: "desc" },
+    })
+  },
+
 }
