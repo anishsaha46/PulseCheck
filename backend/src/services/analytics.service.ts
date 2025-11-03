@@ -114,5 +114,35 @@ export const analyticsService={
     return timeSeries
   },
 
+    async getUserDashboardStats(userId: string) {
+    const monitors = await prisma.monitor.findMany({
+      where: { userId, isDeleted: false },
+    })
+
+    const checks = await prisma.check.findMany({
+      where: {
+        monitor: { userId, isDeleted: false },
+        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      },
+    })
+
+    const incidents = await prisma.incident.findMany({
+      where: {
+        monitor: { userId, isDeleted: false },
+        status: "open",
+      },
+    })
+
+    const successfulChecks = checks.filter((c:any) => c.status === "up").length
+    const avgLatency = checks.length > 0 ? checks.reduce((sum:number, c:any) => sum + c.latencyMs, 0) / checks.length : 0
+
+    return {
+      monitorCount: monitors.length,
+      activeIncidents: incidents.length,
+      checksLast24h: checks.length,
+      uptimeLast24h: checks.length > 0 ? (successfulChecks / checks.length) * 100 : 0,
+      avgLatency: Math.round(avgLatency),
+    }
+  },
 
 }
