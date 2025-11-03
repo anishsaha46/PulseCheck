@@ -135,8 +135,15 @@ async getAlerts(userId: string, pagination = { skip: 0, take: 20 }) {
     return alerts
   },
 
+  async deleteAlert(alertId: string, userId: string) {
+    const alert = await prisma.alert.findFirst({
+      where: { id: alertId, userId },
+    })
 
+    if (!alert) throw new Error("Alert not found")
 
+    return await prisma.alert.delete({ where: { id: alertId } })
+  },
 
   generateEmailTemplate(eventType: string, monitorName: string, data: any): string {
     const baseUrl = config.FRONTEND_URL
@@ -186,7 +193,5 @@ async getAlerts(userId: string, pagination = { skip: 0, take: 20 }) {
       </html>
     `
   },
-
-
 
 }
