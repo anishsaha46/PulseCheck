@@ -173,6 +173,19 @@ export const monitorService = {
     return updated
   },
 
+  async pauseMonitor(id: string, userId: string) {
+    const monitor = await prisma.monitor.findFirst({
+      where: { id, userId, isDeleted: false },
+    })
+
+    if (!monitor) throw new Error("Monitor not found")
+
+    return await prisma.monitor.update({
+      where: { id },
+      data: { isActive: false },
+    })
+  },
+
   async deleteMonitor(id: string, userId: string) {
     const monitor = await prisma.monitor.findFirst({
       where: { id, userId },
