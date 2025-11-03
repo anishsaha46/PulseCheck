@@ -87,4 +87,20 @@ export const incidentService={
     })
   },
 
+    async acknowledgeIncident(incidentId: string, userId: string) {
+    const incident = await prisma.incident.findFirst({
+      where: {
+        id: incidentId,
+        monitor: { userId },
+      },
+    })
+
+    if (!incident) throw new Error("Incident not found")
+
+    return await prisma.incident.update({
+      where: { id: incidentId },
+      data: { status: "acknowledged", acknowledgedAt: new Date() },
+    })
+  },
+
 }
