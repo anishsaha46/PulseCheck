@@ -65,5 +65,54 @@ export const analyticsService={
     }
   },
 
-  
+    async getTimeSeriesData(monitorId: string, userId: string, rangeHours = 24, bucketMinutes = 5) {
+    const monitor = await prisma.monitor.findFirst({
+      where: { id: monitorId, userId },
+    })
+
+    if (!monitor) throw new Error("Monitor not found")
+
+    const since = new Date(Date.now() - rangeHours * 60 * 60 * 1000)
+
+    const checks = await prisma.check.findMany({
+      where: {
+        monitorId,
+        createdAt: { gte: since },
+      },
+      orderBy: { createdAt: "asc" },
+    })
+
+    // Group checks into time buckets
+    const bucketMs = bucketMinutes * 60 * 1000
+    const buckets = new Map<number, typeof checks>()
+
+    for (const check of checks) {
+      const bucketTime = Math.floor(check.createdAt.getTime() / bucketMs) * bucketMs
+      if (!buckets.has(bucketTime)) {
+        buckets.set(bucketTime, [])
+      }
+      buckets.get(bucketTime)!.push(check)
+    }
+
+    // Calculate stats per bucket
+    const timeSeries = Array.from(buckets.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([timestamp, bucketChecks]) => {
+        const successCount = bucketChecks.filter((c: any) => c.status === "up").length
+        const avgLatency =
+          bucketChecks.filter((c: any) => c.status === "up").reduce((sum: number, c: any) => sum + c.latencyMs, 0) /
+          Math.max(successCount, 1)
+
+        return {
+          timestamp: new Date(timestamp),
+          avgLatency: Math.round(avgLatency),
+          uptime: (successCount / bucketChecks.length) * 100,
+          checksCount: bucketChecks.length,
+        }
+      })
+
+    return timeSeries
+  },
+
+
 }
