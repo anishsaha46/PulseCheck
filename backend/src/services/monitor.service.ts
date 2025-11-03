@@ -77,14 +77,19 @@ export const monitorService = {
 
   async getMonitor(id: string, userId: string) {
     const monitor = await prisma.monitor.findFirst({
-      where: { id, userId },
-      include: { checks: true },
+      where: { id, userId,isDeleted:false },
+      include: {
+        checks:{take:100,orderBy:{
+          createdAt:"desc"
+        }},
+        incidents:{orderBy:{createdAt:"desc"},take:10},
+        alerts:true,
+      },
     })
 
     if (!monitor) {
       throw new Error("Monitor not found")
     }
-
     return monitor
   },
 
