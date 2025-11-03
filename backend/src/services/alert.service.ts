@@ -31,4 +31,21 @@ export const alertService={
       return { success: false, error: error instanceof Error ? error.message : "Unknown error" }
     }
   },
+
+  async sendWebhook(url: string, payload: any) {
+    try {
+      const response = await axios.post(url, payload, {
+        timeout: 5000,
+        headers: { "Content-Type": "application/json" },
+      })
+
+      logger.info("Webhook sent", { url, status: response.status })
+      return { success: true, status: response.status }
+    } catch (error) {
+      logger.error("Failed to send webhook", error)
+      return { success: false, error: error instanceof Error ? error.message : "Unknown error" }
+    }
+  },
+
+
 }
