@@ -26,7 +26,32 @@ export const monitorService = {
     }
   },
 
-  
+  async checkSubscriptionLimits(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { subscription: true },
+    })
+
+    if (!user?.subscription) {
+      throw new Error("User subscription not found")
+    }
+
+    const activeMonitors = await prisma.monitor.count({
+      where: {
+        userId,
+        isActive: true,
+        isDeleted: false,
+      },
+    })
+
+    if (activeMonitors >= user.subscription.maxMonitors) {
+      throw new Error(`Monitor limit reached (${user.subscription.maxMonitors}). Upgrade your plan.`)
+    }
+
+    return user.subscription
+  },
+
+
   async getMonitorsByUser(userId: string) {
     return await prisma.monitor.findMany({
       where: { userId },
