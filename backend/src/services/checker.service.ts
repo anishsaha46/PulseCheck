@@ -95,4 +95,16 @@ export const checkerService = {
       }
     }
   },
+
+  extractHeaders(headers:any):Record<string,string>{
+    const extracted :Record<string,string>={};
+    const importantHeaders=["content-type","content-length","server","cache-control"]
+    for(const header of importantHeaders){
+        if(headers[header]){
+            extracted[header]=headers[header]
+        }
+    }
+    return extracted
+  },
+  
 }
