@@ -1,6 +1,32 @@
 import prisma from "../config/database"
+import { logger } from "../utils/logger";
+import { config } from "../config/env";
 
 export const monitorService = {
+  async validateUrl(url: string) {
+    try {
+      const urlObj = new URL(url)
+      // Prevent monitoring of internal addresses in production
+      if (config.NODE_ENV === "production") {
+        const hostname = urlObj.hostname
+        const isInternal =
+          hostname === "localhost" ||
+          hostname === "127.0.0.1" ||
+          hostname.startsWith("192.168.") ||
+          hostname.startsWith("10.") ||
+          hostname.startsWith("172.")
+
+        if (isInternal) {
+          throw new Error("Cannot monitor internal IP addresses in production")
+        }
+      }
+      return true
+    } catch (error) {
+      throw new Error("Invalid URL format")
+    }
+  },
+
+  
   async getMonitorsByUser(userId: string) {
     return await prisma.monitor.findMany({
       where: { userId },
