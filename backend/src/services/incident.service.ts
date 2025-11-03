@@ -60,4 +60,19 @@ export const incidentService={
       })
     }
   },
+
+    async getIncidents(userId: string, pagination = { skip: 0, take: 20 }) {
+    const incidents = await prisma.incident.findMany({
+      where: {
+        monitor: { userId, isDeleted: false },
+      },
+      include: { monitor: true },
+      skip: pagination.skip,
+      take: pagination.take,
+      orderBy: { createdAt: "desc" },
+    })
+
+    return incidents
+  },
+  
 }
