@@ -140,19 +140,37 @@ export const monitorService = {
     return monitor
   },
 
-  async updateMonitor(id: string, data: any, userId: string) {
+  async updateMonitor(id: string, data: Partial<Parameters<typeof this.createMonitor>[0]>, userId: string) {
     const monitor = await prisma.monitor.findFirst({
-      where: { id, userId },
+      where: { id, userId, isDeleted: false },
     })
 
     if (!monitor) {
       throw new Error("Monitor not found")
     }
 
-    return await prisma.monitor.update({
+    if (data.url) {
+      await this.validateUrl(data.url)
+    }
+
+    const updateData: any = {}
+    if (data.name) updateData.name = data.name
+    if (data.url) updateData.url = data.url
+    if (data.method) updateData.method = data.method
+    if (data.intervalSec) updateData.intervalSec = data.intervalSec
+    if (data.timeoutMs) updateData.timeoutMs = Math.min(data.timeoutMs, config.MONITOR_MAX_TIMEOUT_MS)
+    if (data.headers) updateData.headers = JSON.stringify(data.headers)
+    if (data.body) updateData.body = JSON.stringify(data.body)
+    if (data.followRedirects !== undefined) updateData.followRedirects = data.followRedirects
+    if (data.maxRedirects) updateData.maxRedirects = data.maxRedirects
+
+    const updated = await prisma.monitor.update({
       where: { id },
-      data,
+      data: updateData,
     })
+
+    logger.info("Monitor updated", { monitorId: id, userId })
+    return updated
   },
 
   async deleteMonitor(id: string, userId: string) {
