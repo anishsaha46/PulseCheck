@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer'
 import axios from "axios";
 import { logger } from "../utils/logger"
 import { config } from "../config/env";
+import { timeStamp } from "console";
 
 const emailTransporter = nodemailer.createTransport({
     host:config.SMTP_HOST,
@@ -44,6 +45,62 @@ export const alertService={
     } catch (error) {
       logger.error("Failed to send webhook", error)
       return { success: false, error: error instanceof Error ? error.message : "Unknown error" }
+    }
+  },
+
+  
+  async triggerAlerts(monitorId: string, eventType: string, data: any) {
+    const alerts = await prisma.alert.findMany({
+      where: { monitorId, isEnabled: true },
+      include: { monitor: true, user: true },
+    })
+
+    for (const alert of alerts) {
+      try {
+        if (alert.type === "email") {
+          const html = this.generateEmailTemplate(eventType, alert.monitor.name, data)
+          await this.sendEmail(alert.channel, `PulseCheck Alert: ${eventType}`, html)
+        } else if (alert.type === "webhook") {
+          await this.sendWebhook(alert.channel, {
+            event: eventType,
+            monitor: { id: alert.monitorId, name: alert.monitor.name },
+            data,
+            timestamp: new Date(),
+          })
+        }
+
+        // Record delivery
+        await prisma.alertDelivery.create({
+          data: {
+            alertId: alert.id,
+            status: "delivered",
+          },
+        })
+
+        await prisma.alert.update({
+          where: { id: alert.id },
+          data: { lastSentAt: new Date(), lastStatus: "sent", consecutiveFails: 0 },
+        })
+      } catch (error) {
+        logger.error("Failed to trigger alert", { alertId: alert.id, error })
+
+        // Record failed delivery
+        await prisma.alertDelivery.create({
+          data: {
+            alertId: alert.id,
+            status: "failed",
+            error: error instanceof Error ? error.message : "Unknown error",
+          },
+        })
+
+        await prisma.alert.update({
+          where: { id: alert.id },
+          data: {
+            lastStatus: "failed",
+            consecutiveFails: { increment: 1 },
+          },
+        })
+      }
     }
   },
 
