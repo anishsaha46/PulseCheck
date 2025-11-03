@@ -212,14 +212,19 @@ export const monitorService = {
     })
   },
 
-  async deleteMonitor(id: string, userId: string) {
+  async hardDeleteMonitor(id: string, userId: string) {
     const monitor = await prisma.monitor.findFirst({
       where: { id, userId },
     })
 
-    if (!monitor) {
-      throw new Error("Monitor not found")
-    }
+    if (!monitor) throw new Error("Monitor not found")
+
+    // Delete all related data
+    await Promise.all([
+      prisma.check.deleteMany({ where: { monitorId: id } }),
+      prisma.incident.deleteMany({ where: { monitorId: id } }),
+      prisma.alert.deleteMany({ where: { monitorId: id } }),
+    ])
 
     return await prisma.monitor.delete({ where: { id } })
   },
