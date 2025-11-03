@@ -106,5 +106,43 @@ export const checkerService = {
     }
     return extracted
   },
-  
+
+  async checkWithRetry(
+    url: string,
+    method: string,
+    config_data?: any,
+    retries: number = config.WORKER_RETRY_ATTEMPTS,
+  ): Promise<CheckResult> {
+    let lastError: CheckResult | null = null
+
+    for (let attempt = 0; attempt < retries; attempt++) {
+      const result = await this.checkEndpoint(url, method, config_data)
+
+      // Success on 2xx-3xx status codes or if we've reached max retries
+      if (result.status === "up" || attempt === retries - 1) {
+        return result
+      }
+
+      // Exponential backoff for retries
+      const backoffMs = config.WORKER_RETRY_BACKOFF_MS * Math.pow(2, attempt)
+      logger.debug(`Check failed, retrying in ${backoffMs}ms`, {
+        url,
+        attempt: attempt + 1,
+        maxAttempts: retries,
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, backoffMs))
+      lastError = result
+    }
+
+    return (
+      lastError || {
+        statusCode: null,
+        latencyMs: 0,
+        responseSizeBytes: null,
+        status: "error",
+        error: "Max retries exceeded",
+      }
+    )
+  },
 }
