@@ -52,11 +52,27 @@ export const monitorService = {
   },
 
 
-  async getMonitorsByUser(userId: string) {
-    return await prisma.monitor.findMany({
-      where: { userId },
-      include: { checks: { take: 10, orderBy: { createdAt: "desc" } } },
-    })
+  async getMonitorsByUser(userId: string, pagination = { skip: 0, take: 10 }) {
+    const [monitors, total] = await Promise.all([
+      prisma.monitor.findMany({
+        where: { userId, isDeleted: false },
+        include: {
+          checks: { take: 5, orderBy: { createdAt: "desc" } },
+          incidents: { where: { status: "open" }, take: 1 },
+        },
+        skip: pagination.skip,
+        take: pagination.take,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.monitor.count({
+        where: { userId, isDeleted: false },
+      }),
+    ])
+
+    return {
+      monitors,
+      pagination: { skip: pagination.skip, take: pagination.take, total },
+    }
   },
 
   async getMonitor(id: string, userId: string) {
