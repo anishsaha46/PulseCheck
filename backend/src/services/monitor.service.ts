@@ -93,14 +93,51 @@ export const monitorService = {
     return monitor
   },
 
-  async createMonitor(data: any, userId: string) {
-    return await prisma.monitor.create({
+  async createMonitor(
+    data: {
+      name: string
+      url: string
+      method?: string
+      intervalSec?: number
+      timeoutMs?: number
+      headers?: Record<string, string>
+      body?: any
+      followRedirects?: boolean
+      maxRedirects?: number
+    },
+    userId: string,
+  ) {
+    // Validate URL
+    await this.validateUrl(data.url)
+
+    // Check subscription limits
+    const subscription = await this.checkSubscriptionLimits(userId)
+
+    // Validate interval is within plan limits
+    const minInterval = Math.max(config.MONITOR_CHECK_INTERVAL_MIN, subscription.planName === "free" ? 60 : 30)
+
+    if ((data.intervalSec || 60) < minInterval) {
+      throw new Error(`Minimum check interval is ${minInterval} seconds for your plan`)
+    }
+
+    const monitor = await prisma.monitor.create({
       data: {
-        ...data,
         userId,
-        status: "active",
+        name: data.name,
+        url: data.url,
+        method: data.method || "GET",
+        intervalSec: data.intervalSec || 60,
+        timeoutMs: Math.min(data.timeoutMs || 10000, config.MONITOR_MAX_TIMEOUT_MS),
+        headers: data.headers ? JSON.stringify(data.headers) : null,
+        body: data.body ? JSON.stringify(data.body) : null,
+        followRedirects: data.followRedirects !== false,
+        maxRedirects: data.maxRedirects || 5,
+        isActive: true,
       },
     })
+
+    logger.info("Monitor created", { monitorId: monitor.id, userId })
+    return monitor
   },
 
   async updateMonitor(id: string, data: any, userId: string) {
