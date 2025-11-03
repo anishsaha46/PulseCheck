@@ -186,6 +186,32 @@ export const monitorService = {
     })
   },
 
+  async resumeMonitor(id: string, userId: string) {
+    const monitor = await prisma.monitor.findFirst({
+      where: { id, userId, isDeleted: false },
+    })
+
+    if (!monitor) throw new Error("Monitor not found")
+
+    return await prisma.monitor.update({
+      where: { id },
+      data: { isActive: true },
+    })
+  },
+
+    async softDeleteMonitor(id: string, userId: string) {
+    const monitor = await prisma.monitor.findFirst({
+      where: { id, userId },
+    })
+
+    if (!monitor) throw new Error("Monitor not found")
+
+    return await prisma.monitor.update({
+      where: { id },
+      data: { isDeleted: true, deletedAt: new Date(), isActive: false },
+    })
+  },
+
   async deleteMonitor(id: string, userId: string) {
     const monitor = await prisma.monitor.findFirst({
       where: { id, userId },
