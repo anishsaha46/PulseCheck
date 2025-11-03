@@ -123,6 +123,18 @@ export const alertService={
     })
   },
 
+async getAlerts(userId: string, pagination = { skip: 0, take: 20 }) {
+    const alerts = await prisma.alert.findMany({
+      where: { userId },
+      include: { monitor: true },
+      skip: pagination.skip,
+      take: pagination.take,
+      orderBy: { createdAt: "desc" },
+    })
+
+    return alerts
+  },
+
 
 
 
