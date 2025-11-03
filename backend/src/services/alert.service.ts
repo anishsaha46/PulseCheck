@@ -48,7 +48,7 @@ export const alertService={
     }
   },
 
-  
+
   async triggerAlerts(monitorId: string, eventType: string, data: any) {
     const alerts = await prisma.alert.findMany({
       where: { monitorId, isEnabled: true },
@@ -102,6 +102,25 @@ export const alertService={
         })
       }
     }
+  },
+
+  async createAlert(userId: string, data: any) {
+    const monitor = await prisma.monitor.findFirst({
+      where: { id: data.monitorId, userId },
+    })
+
+    if (!monitor) throw new Error("Monitor not found")
+
+    return await prisma.alert.create({
+      data: {
+        userId,
+        monitorId: data.monitorId,
+        type: data.type,
+        channel: data.channel,
+        threshold: data.threshold || 3,
+        recoveryCount: data.recoveryCount || 2,
+      },
+    })
   },
 
 
