@@ -73,7 +73,19 @@ export const cacheService={
         }
     },
 
-    
+    getMonitorStatsKey(monitorId: string, range: string) {
+        return `monitor:${monitorId}:stats:${range}`
+    },
+
+    getMonitorListKey(userId: string) {
+        return `user:${userId}:monitors`
+    },
+
+    getUserDashboardKey(userId: string) {
+        return `user:${userId}:dashboard`
+    },
+
+
 }
 
 
