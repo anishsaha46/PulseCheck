@@ -27,6 +27,7 @@
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.10",
+    "queue": "^7.0.0",
     "redis": "^5.9.0",
     "zod": "^4.1.12"
   },
