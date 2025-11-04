@@ -58,6 +58,22 @@ export const cacheService={
             return false
         }
     },
+
+    async invalidatePattern(pattern:string){
+        try{
+            if(!redisClient) return false
+            const keys= await redisClient.keys(pattern)
+            if(keys.length >0){
+                await redisClient.del(keys)
+            }
+            return true;
+        }catch(error){
+            logger.warn("Cache invalidate pattern failed",{pattern,error})
+            return false
+        }
+    },
+
+    
 }
 
 
