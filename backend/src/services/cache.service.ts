@@ -24,3 +24,16 @@ export const initRedis = async () => {
   }
 }
 
+export const cacheService={
+    async get(key:string){
+        try{
+            if(!redisClient) return null
+            const value= await redisClient.get(key)
+            return value ? JSON.parse(value):null
+        }catch(error){
+            logger.error("Cache get Failed",{key,error})
+            return null
+        }
+    }
+}
+
