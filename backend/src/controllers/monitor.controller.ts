@@ -55,13 +55,43 @@ export const monitorController = {
     }
   },
 
+  async pauseMonitor(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params
+      const monitor = await monitorService.pauseMonitor(id, req.userId!)
+      await cacheService.invalidatePattern(`monitor:${id}:*`)
+      res.json(successResponse(monitor))
+    } catch (error: any) {
+      res.status(400).json(errorResponse("MONITOR_PAUSE_FAILED", error.message))
+    }
+  },
+
+  async resumeMonitor(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params
+      const monitor = await monitorService.resumeMonitor(id, req.userId!)
+      await cacheService.invalidatePattern(`monitor:${id}:*`)
+      res.json(successResponse(monitor))
+    } catch (error: any) {
+      res.status(400).json(errorResponse("MONITOR_RESUME_FAILED", error.message))
+    }
+  },
+
   async deleteMonitor(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params
-      await monitorService.deleteMonitor(id, req.userId!)
-      res.json({ message: "Monitor deleted" })
+      const permanent = req.query.permanent === "true"
+
+      if (permanent) {
+        await monitorService.hardDeleteMonitor(id, req.userId!)
+      } else {
+        await monitorService.softDeleteMonitor(id, req.userId!)
+      }
+
+      await cacheService.invalidatePattern(`monitor:${id}:*`)
+      res.json(successResponse({ message: "Monitor deleted" }))
     } catch (error: any) {
-      res.status(400).json({ message: error.message })
+      res.status(400).json(errorResponse("MONITOR_DELETE_FAILED", error.message))
     }
   },
 }
