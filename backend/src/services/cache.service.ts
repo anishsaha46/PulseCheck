@@ -34,6 +34,30 @@ export const cacheService={
             logger.error("Cache get Failed",{key,error})
             return null
         }
-    }
+    },
+
+    async set(key:string,value:any,ttlSeconds=300){
+        try{
+            if(!redisClient) return false
+            await redisClient.setEx(key,ttlSeconds,JSON.stringify(value)
+            )
+            return true
+        }catch(error){
+            logger.warn("Cache set failed",{key,error})
+            return false
+        }
+    },
+
+    async delete(key: string) {
+        try {
+            if (!redisClient) return false
+            await redisClient.del(key)
+            return true
+        } catch (error) {
+            logger.warn("Cache delete failed", { key, error })
+            return false
+        }
+    },
 }
+
 
