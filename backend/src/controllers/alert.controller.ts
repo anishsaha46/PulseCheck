@@ -1,36 +1,37 @@
 import type { Response } from "express"
 import type { AuthRequest } from "../middleware/auth.middleware"
+import { alertService } from "../services/alert.service"
+import { successResponse, errorResponse } from "../utils/response"
 
 export const alertController = {
   async getAlerts(req: AuthRequest, res: Response) {
     try {
-      res.json({ alerts: [] })
+      const skip = Number(req.query.skip) || 0
+      const take = Math.min(Number(req.query.take) || 20, 50)
+
+      const alerts = await alertService.getAlerts(req.userId!, { skip, take })
+      res.json(successResponse(alerts))
     } catch (error: any) {
-      res.status(500).json({ message: error.message })
+      res.status(500).json(errorResponse("ALERTS_FETCH_FAILED", error.message))
     }
   },
 
   async createAlert(req: AuthRequest, res: Response) {
     try {
-      res.status(201).json({ message: "Alert created" })
+      const alert = await alertService.createAlert(req.userId!, req.body)
+      res.status(201).json(successResponse(alert))
     } catch (error: any) {
-      res.status(400).json({ message: error.message })
-    }
-  },
-
-  async updateAlert(req: AuthRequest, res: Response) {
-    try {
-      res.json({ message: "Alert updated" })
-    } catch (error: any) {
-      res.status(400).json({ message: error.message })
+      res.status(400).json(errorResponse("ALERT_CREATION_FAILED", error.message))
     }
   },
 
   async deleteAlert(req: AuthRequest, res: Response) {
     try {
-      res.json({ message: "Alert deleted" })
+      const { id } = req.params
+      await alertService.deleteAlert(id, req.userId!)
+      res.json(successResponse({ message: "Alert deleted" }))
     } catch (error: any) {
-      res.status(400).json({ message: error.message })
+      res.status(400).json(errorResponse("ALERT_DELETE_FAILED", error.message))
     }
   },
 }
