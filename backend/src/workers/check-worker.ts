@@ -1,6 +1,7 @@
 import { checkQueue } from "./queue"
 import { checkerService } from "../services/checker.service"
 import { incidentService } from "../services/incident.service"
+import { websocketService } from "../services/websocket.service"
 import prisma from "../config/database"
 import { cacheService } from "../services/cache.service"
 import { logger } from "../utils/logger"
@@ -35,7 +36,7 @@ export const startCheckWorker = async () => {
           statusCode: result.statusCode,
           latencyMs: result.latencyMs,
           responseSizeBytes: result.responseSizeBytes,
-          responseHeaders: result.responseHeaders ? JSON.stringify(result.responseHeaders) : null,
+          responseHeaders: result.responseHeaders || undefined,
           status: result.status,
           error: result.error,
         },
@@ -47,6 +48,25 @@ export const startCheckWorker = async () => {
         status: check.status,
         latency: check.latencyMs,
       })
+
+      // Fetch monitor details for WebSocket emission
+      const monitor = await prisma.monitor.findUnique({
+        where: { id: monitorId },
+        select: { id: true, name: true, url: true, userId: true },
+      })
+
+      // Emit WebSocket event
+      if (monitor) {
+        websocketService.emitCheckCompleted(monitor.userId, {
+          monitorId,
+          check,
+          monitor: {
+            id: monitor.id,
+            name: monitor.name,
+            url: monitor.url,
+          },
+        })
+      }
 
       // Evaluate incidents
       await incidentService.evaluateIncident(monitorId)
