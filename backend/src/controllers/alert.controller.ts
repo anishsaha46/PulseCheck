@@ -25,6 +25,16 @@ export const alertController = {
     }
   },
 
+  async updateAlert(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params
+      const alert = await alertService.updateAlert(id, req.userId!, req.body)
+      res.json(successResponse(alert))
+    } catch (error: any) {
+      res.status(400).json(errorResponse("ALERT_UPDATE_FAILED", error.message))
+    }
+  },
+
   async deleteAlert(req: AuthRequest, res: Response) {
     try {
       const { id } = req.params
