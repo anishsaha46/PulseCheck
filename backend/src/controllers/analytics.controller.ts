@@ -37,4 +37,54 @@ export const analyticsController = {
       res.status(500).json(errorResponse("INCIDENTS_FETCH_FAILED", error.message))
     }
   },
+
+  async getMonitorTimeSeries(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params
+      const rangeHours = Number(req.query.rangeHours) || 24
+      const bucketMinutes = Number(req.query.bucketMinutes) || 5
+
+      const data = await analyticsService.getTimeSeriesData(
+        id,
+        req.userId!,
+        rangeHours,
+        bucketMinutes
+      )
+
+      res.json(successResponse(data))
+    } catch (error: any) {
+      res.status(500).json(errorResponse("TIMESERIES_FETCH_FAILED", error.message))
+    }
+  },
+
+  async getMonitorDistribution(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params
+      const rangeHours = Number(req.query.rangeHours) || 24
+
+      const stats = await analyticsService.getMonitorStats(id, req.userId!, rangeHours)
+      res.json(successResponse(stats.distribution))
+    } catch (error: any) {
+      res.status(500).json(errorResponse("DISTRIBUTION_FETCH_FAILED", error.message))
+    }
+  },
+
+  async getMonitorStats(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params
+      const rangeHours = Number(req.query.rangeHours) || 24
+
+      const cacheKey = cacheService.getMonitorStatsKey(id, `${rangeHours}h`)
+      let stats = await cacheService.get(cacheKey)
+
+      if (!stats) {
+        stats = await analyticsService.getMonitorStats(id, req.userId!, rangeHours)
+        await cacheService.set(cacheKey, stats, 60)
+      }
+
+      res.json(successResponse(stats))
+    } catch (error: any) {
+      res.status(500).json(errorResponse("STATS_FETCH_FAILED", error.message))
+    }
+  },
 }
