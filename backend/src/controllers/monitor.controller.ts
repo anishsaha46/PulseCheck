@@ -5,7 +5,7 @@ import { cacheService } from "../services/cache.service"
 import { analyticsService } from "../services/analytics.service"
 import { successResponse,errorResponse } from "../utils/response"
 import { logger } from "../utils/logger"
-import { measureMemory } from "vm"
+import { enqueueCheck } from "../workers/queue"
 
 
 export const monitorController = {
@@ -92,6 +92,53 @@ export const monitorController = {
       res.json(successResponse({ message: "Monitor deleted" }))
     } catch (error: any) {
       res.status(400).json(errorResponse("MONITOR_DELETE_FAILED", error.message))
+    }
+  },
+
+  async triggerCheck(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params
+
+      // Fetch monitor and verify ownership
+      const monitor = await monitorService.getMonitor(id, req.userId!)
+
+      // Check if monitor is active
+      if (!monitor.isActive) {
+        return res.status(400).json(errorResponse("MONITOR_INACTIVE", "Monitor is not active"))
+      }
+
+      // Parse headers and body from JSON
+      const headers = monitor.headers ? JSON.parse(monitor.headers as string) : undefined
+      const body = monitor.body ? JSON.parse(monitor.body as string) : undefined
+
+      // Enqueue immediate check
+      await enqueueCheck({
+        monitorId: monitor.id,
+        url: monitor.url,
+        method: monitor.method,
+        headers,
+        body,
+        timeoutMs: monitor.timeoutMs,
+        followRedirects: monitor.followRedirects,
+        maxRedirects: monitor.maxRedirects,
+      })
+
+      logger.info("Manual check triggered", {
+        monitorId: monitor.id,
+        userId: req.userId,
+      })
+
+      res.json(successResponse({
+        message: "Check triggered successfully",
+        monitorId: monitor.id,
+      }))
+    } catch (error: any) {
+      logger.error("Manual check trigger failed", {
+        monitorId: req.params.id,
+        userId: req.userId,
+        error: error.message,
+      })
+      res.status(400).json(errorResponse("CHECK_TRIGGER_FAILED", error.message))
     }
   },
 }
