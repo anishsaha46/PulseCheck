@@ -13,8 +13,27 @@ export interface CheckJobData {
   maxRedirects: number
 }
 
+// Parse Redis URL for Bull configuration
+const parseRedisUrl = (url: string) => {
+  try {
+    const urlObj = new URL(url)
+    const isUpstash = url.includes('upstash.io')
+    
+    return {
+      host: urlObj.hostname,
+      port: parseInt(urlObj.port) || 6379,
+      password: urlObj.password || undefined,
+      username: urlObj.username || undefined,
+      tls: isUpstash ? { rejectUnauthorized: false } : undefined,
+    }
+  } catch (error) {
+    logger.error("Failed to parse Redis URL", error)
+    return { host: 'localhost', port: 6379 }
+  }
+}
+
 const defaultQueueOptions = {
-  redis: config.REDIS_URL,
+  redis: parseRedisUrl(config.REDIS_URL || 'redis://localhost:6379'),
   defaultJobOptions: {
     attempts: config.WORKER_RETRY_ATTEMPTS,
     backoff: {
@@ -31,7 +50,21 @@ const defaultQueueOptions = {
   },
 }
 
-export const checkQueue = new Bull<CheckJobData>("api-checks", defaultQueueOptions)
+let checkQueue: Bull.Queue<CheckJobData>
+
+try {
+  checkQueue = new Bull<CheckJobData>("api-checks", defaultQueueOptions)
+} catch (error) {
+  logger.error("Failed to initialize Bull queue", error)
+  // Create a mock queue for development
+  checkQueue = {
+    process: () => {},
+    add: async () => ({ id: 'mock' } as any),
+    on: () => {},
+  } as any
+}
+
+export { checkQueue }
 
 checkQueue.on("error", (error) => {
   logger.error("Queue error", error)
