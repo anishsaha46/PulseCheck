@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient } from "../../generated/prisma"
 import { logger } from "../utils/logger"
 
 let prisma: PrismaClient
@@ -21,10 +21,5 @@ if (process.env.NODE_ENV === "production") {
   }
   prisma = globalWithPrisma.prisma
 }
-
-// Log Prisma errors in production
-prisma.$on("error", (e:Error) => {
-  logger.error("Prisma error event", e)
-})
 
 export default prisma
