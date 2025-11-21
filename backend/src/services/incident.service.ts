@@ -2,6 +2,7 @@ import prisma from "../config/database";
 import { logger } from "../utils/logger";
 import { config } from "../config/env";
 import { alertService } from "./alert.service";
+import { websocketService } from "./websocket.service";
 
 export const incidentService={
   async evaluateIncident(monitorId: string) {
@@ -35,6 +36,24 @@ export const incidentService={
 
       logger.info("Incident created", { monitorId, incidentId: incident.id })
 
+      // Fetch monitor details for WebSocket emission
+      const monitor = await prisma.monitor.findUnique({
+        where: { id: monitorId },
+        select: { id: true, name: true, url: true, userId: true },
+      })
+
+      // Emit WebSocket event
+      if (monitor) {
+        websocketService.emitIncidentCreated(monitor.userId, {
+          incident,
+          monitor: {
+            id: monitor.id,
+            name: monitor.name,
+            url: monitor.url,
+          },
+        })
+      }
+
       // Trigger alerts
       await alertService.triggerAlerts(monitorId, "incident_created", incident)
     } else if (openIncident && successCount >= config.INCIDENT_RECOVERY_COUNT && failureCount === 0) {
@@ -49,6 +68,24 @@ export const incidentService={
       })
 
       logger.info("Incident resolved", { monitorId, incidentId: openIncident.id })
+
+      // Fetch monitor details for WebSocket emission
+      const monitor = await prisma.monitor.findUnique({
+        where: { id: monitorId },
+        select: { id: true, name: true, url: true, userId: true },
+      })
+
+      // Emit WebSocket event
+      if (monitor) {
+        websocketService.emitIncidentResolved(monitor.userId, {
+          incident: updated,
+          monitor: {
+            id: monitor.id,
+            name: monitor.name,
+            url: monitor.url,
+          },
+        })
+      }
 
       // Trigger recovery alerts
       await alertService.triggerAlerts(monitorId, "incident_resolved", updated)
