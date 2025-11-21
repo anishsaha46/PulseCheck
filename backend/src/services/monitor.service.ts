@@ -128,8 +128,8 @@ export const monitorService = {
         method: data.method || "GET",
         intervalSec: data.intervalSec || 60,
         timeoutMs: Math.min(data.timeoutMs || 10000, config.MONITOR_MAX_TIMEOUT_MS),
-        headers: data.headers ? JSON.stringify(data.headers) : null,
-        body: data.body ? JSON.stringify(data.body) : null,
+        headers: data.headers || undefined,
+        body: data.body || undefined,
         followRedirects: data.followRedirects !== false,
         maxRedirects: data.maxRedirects || 5,
         isActive: true,
@@ -159,8 +159,8 @@ export const monitorService = {
     if (data.method) updateData.method = data.method
     if (data.intervalSec) updateData.intervalSec = data.intervalSec
     if (data.timeoutMs) updateData.timeoutMs = Math.min(data.timeoutMs, config.MONITOR_MAX_TIMEOUT_MS)
-    if (data.headers) updateData.headers = JSON.stringify(data.headers)
-    if (data.body) updateData.body = JSON.stringify(data.body)
+    if (data.headers) updateData.headers = data.headers
+    if (data.body) updateData.body = data.body
     if (data.followRedirects !== undefined) updateData.followRedirects = data.followRedirects
     if (data.maxRedirects) updateData.maxRedirects = data.maxRedirects
 
