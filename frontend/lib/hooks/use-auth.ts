@@ -9,15 +9,28 @@ export function useLogin() {
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       apiClient.post(endpoints.auth.login, { email, password }),
-    onSuccess: (data: any) => {
-      setAuth(data.user, data.token)
+    onSuccess: (response: any) => {
+      // Backend returns { success: true, data: { user, token } }
+      const { user, token } = response.data || response
+      if (user && token) {
+        setAuth(user, token)
+      }
     },
   })
 }
 
 export function useRegister() {
+  const setAuth = useAuthStore((state) => state.setAuth)
+
   return useMutation({
     mutationFn: (data: any) => apiClient.post(endpoints.auth.register, data),
+    onSuccess: (response: any) => {
+      // Backend returns { success: true, data: { user, token } }
+      const { user, token } = response.data || response
+      if (user && token) {
+        setAuth(user, token)
+      }
+    },
   })
 }
 
