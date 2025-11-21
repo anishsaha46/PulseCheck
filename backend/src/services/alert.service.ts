@@ -135,6 +135,42 @@ async getAlerts(userId: string, pagination = { skip: 0, take: 20 }) {
     return alerts
   },
 
+  async updateAlert(alertId: string, userId: string, data: any) {
+    const alert = await prisma.alert.findFirst({
+      where: { id: alertId, userId },
+    })
+
+    if (!alert) throw new Error("Alert not found")
+
+    // Validate email format for email alerts
+    if (data.type === "email" && data.channel) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(data.channel)) {
+        throw new Error("Invalid email address")
+      }
+    }
+
+    // Validate webhook URL for webhook alerts
+    if (data.type === "webhook" && data.channel) {
+      try {
+        new URL(data.channel)
+      } catch {
+        throw new Error("Invalid webhook URL")
+      }
+    }
+
+    return await prisma.alert.update({
+      where: { id: alertId },
+      data: {
+        type: data.type,
+        channel: data.channel,
+        threshold: data.threshold,
+        recoveryCount: data.recoveryCount,
+        isEnabled: data.isEnabled,
+      },
+    })
+  },
+
   async deleteAlert(alertId: string, userId: string) {
     const alert = await prisma.alert.findFirst({
       where: { id: alertId, userId },
