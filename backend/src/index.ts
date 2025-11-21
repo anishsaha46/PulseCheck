@@ -1,8 +1,10 @@
+import { createServer } from "http"
 import app from "./app"
 import { config } from "./config/env"
 import { startScheduler } from "./workers/schedular"
 import { startCheckWorker } from "./workers/check-worker"
 import { initRedis } from "./services/cache.service"
+import { initializeWebSocket } from "./websocket/server"
 import prisma from "./config/database"
 import { logger } from "./utils/logger"
 
@@ -27,10 +29,18 @@ async function startServer() {
     logger.info("Starting check worker...")
     await startCheckWorker()
 
-    // Start Express server
-    app.listen(PORT, () => {
-      logger.info("Server running", {
+    // Create HTTP server
+    const httpServer = createServer(app)
+
+    // Initialize WebSocket server
+    logger.info("Initializing WebSocket server...")
+    initializeWebSocket(httpServer)
+
+    // Start server
+    httpServer.listen(PORT, () => {
+      logger.info("Server running with WebSocket support", {
         url: `http://localhost:${PORT}`,
+        wsUrl: `ws://localhost:${PORT}`,
         apiHealth: `http://localhost:${PORT}/api/health`,
       })
     })
@@ -38,12 +48,30 @@ async function startServer() {
     // Graceful shutdown
     process.on("SIGTERM", async () => {
       logger.info("SIGTERM received, shutting down gracefully...")
+      
+      // Close WebSocket connections
+      const io = require("./websocket/server").getIO()
+      if (io) {
+        io.close(() => {
+          logger.info("WebSocket server closed")
+        })
+      }
+      
       await prisma.$disconnect()
       process.exit(0)
     })
 
     process.on("SIGINT", async () => {
       logger.info("SIGINT received, shutting down gracefully...")
+      
+      // Close WebSocket connections
+      const io = require("./websocket/server").getIO()
+      if (io) {
+        io.close(() => {
+          logger.info("WebSocket server closed")
+        })
+      }
+      
       await prisma.$disconnect()
       process.exit(0)
     })

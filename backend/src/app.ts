@@ -7,6 +7,7 @@ import monitorRoutes from "./routes/monitor.routes"
 import checkRoutes from "./routes/check.routes"
 import alertRoutes from "./routes/alert.routes"
 import analyticsRoutes from "./routes/analytics.routes"
+import subscriptionRoutes from "./routes/subscription.routes"
 import errorMiddleware from "./middleware/error.middleware"
 import { apiLimiter, authLimiter } from "./middleware/rateLimiter.middleware"
 import { logger } from "./utils/logger"
@@ -52,6 +53,7 @@ app.use("/api/v1/monitors", monitorRoutes)
 app.use("/api/v1/checks", checkRoutes)
 app.use("/api/v1/alerts", alertRoutes)
 app.use("/api/v1/analytics", analyticsRoutes)
+app.use("/api/v1/subscription", subscriptionRoutes)
 
 // 404 handler
 app.use((req: Request, res: Response) => {
